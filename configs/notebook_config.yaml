@@ -1,0 +1,23 @@
+evaluation:
+  frameworks:
+  - ragas
+  - custom
+  metrics:
+  - faithfulness
+  - answer_relevancy
+  - context_precision
+  sample_size: null
+generator:
+  max_tokens: 1000
+  model: gpt-4o-mini
+  provider: openai
+  temperature: 0.0
+pipeline_type: linear
+retriever:
+  chunk_overlap: 50
+  chunk_size: 500
+  model: text-embedding-3-small
+  search_type: similarity
+  top_k: 5
+  type: hybrid
+vector_store_type: faiss
