@@ -1,11 +1,23 @@
-# core/__init__.py
-"""Core module containing configuration, protocols, and type definitions."""
-from .config import ConfigManager, RAGConfig, RetrieverConfig, GeneratorConfig, EvaluationConfig
-from .protocols import RetrieverStrategy, GeneratorStrategy, EvaluatorStrategy
-from .types import Document, RAGState
+"""
+Core modules for the RAG pipeline.
+"""
+from .config import (
+    ConfigManager, RAGConfig, LoaderConfig, ChunkerConfig,
+    EmbeddingConfig, StorageConfig, RetrievalConfig,
+    GenerationConfig, MetricsConfig, create_default_config
+)
+from .protocols import (
+    RetrieverStrategy, GeneratorStrategy, EvaluatorStrategy
+)
+from .types import RAGState
 
 __all__ = [
-    "ConfigManager", "RAGConfig", "RetrieverConfig", "GeneratorConfig", "EvaluationConfig",
+    # Config classes
+    "ConfigManager", "RAGConfig", "LoaderConfig", "ChunkerConfig",
+    "EmbeddingConfig", "StorageConfig", "RetrievalConfig",
+    "GenerationConfig", "MetricsConfig", "create_default_config",
+    # Protocols
     "RetrieverStrategy", "GeneratorStrategy", "EvaluatorStrategy",
-    "Document", "RAGState"
+    # Types
+    "RAGState"
 ]

@@ -1,5 +1,7 @@
 # analysis/__init__.py
-"""Analysis module for results visualization and reporting."""
+"""
+Results analysis and visualization modules for RAG pipeline.
+"""
 from .results import ResultsAnalyzer
 
 __all__ = ["ResultsAnalyzer"]

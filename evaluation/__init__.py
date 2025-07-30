@@ -1,17 +1,14 @@
-# evaluation/__init__.py
-"""Evaluation framework modules."""
+"""
+Evaluation framework modules.
+"""
 from .ragas_evaluator import RAGASEvaluator
-from .custom_evaluator import CustomEvaluator
+from .cofe_evaluator import CoFERAGEvaluator
+from .omnieval_evaluator import OmniEvalEvaluator
 from .orchestrator import EvaluationOrchestrator
-from .advanced_evaluators import (
-    BERGENEvaluator, FlashRAGEvaluator, CoFERAGEvaluator,
-    VERAEvaluator, TRACeEvaluator, OmniEvalEvaluator,
-    register_evaluation_framework
-)
 
 __all__ = [
-    "RAGASEvaluator", "CustomEvaluator", "EvaluationOrchestrator",
-    "BERGENEvaluator", "FlashRAGEvaluator", "CoFERAGEvaluator",
-    "VERAEvaluator", "TRACeEvaluator", "OmniEvalEvaluator",
-    "register_evaluation_framework"
+    "RAGASEvaluator", 
+    "CoFERAGEvaluator",
+    "OmniEvalEvaluator",
+    "EvaluationOrchestrator"
 ]

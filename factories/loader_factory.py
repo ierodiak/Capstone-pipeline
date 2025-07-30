@@ -1,5 +1,4 @@
 # factories/loader_factory.py
-
 """
 Factory for creating different document loaders.
 """
@@ -7,7 +6,8 @@ from typing import List, Protocol
 from abc import abstractmethod
 from pathlib import Path
 from core.types import Document
-from core.experiment_config import LoaderConfig
+from core.config import LoaderConfig  # FIXED: Changed from experiment_config
+
 
 class DocumentLoader(Protocol):
     """Protocol for document loaders"""
@@ -15,13 +15,14 @@ class DocumentLoader(Protocol):
     def load(self, path: str) -> List[Document]:
         pass
 
+
 class TextLoader:
     """Standard text document loader"""
     def __init__(self, config: LoaderConfig):
         self.config = config
         
     def load(self, path: str) -> List[Document]:
-        from langchain_community.document_loaders import PyPDFLoader, TextLoader, UnstructuredWordDocumentLoader
+        from langchain_community.document_loaders import PyPDFLoader, TextLoader as LangchainTextLoader, UnstructuredWordDocumentLoader
         
         documents = []
         path_obj = Path(path)
@@ -30,7 +31,7 @@ class TextLoader:
             if path_obj.suffix == '.pdf':
                 loader = PyPDFLoader(str(path))
             elif path_obj.suffix == '.txt':
-                loader = TextLoader(str(path))
+                loader = LangchainTextLoader(str(path))
             elif path_obj.suffix == '.docx':
                 loader = UnstructuredWordDocumentLoader(str(path))
             else:
@@ -44,6 +45,7 @@ class TextLoader:
                     documents.extend(docs)
                     
         return documents
+
 
 class TextImageLoader:
     """Loader that extracts both text and images from documents"""
@@ -98,6 +100,7 @@ class TextImageLoader:
             documents.extend(text_docs)
             
         return documents
+
 
 class LoaderFactory:
     """Factory for creating document loaders"""

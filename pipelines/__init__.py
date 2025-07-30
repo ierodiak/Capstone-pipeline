@@ -1,6 +1,12 @@
+# =====================================
 # pipelines/__init__.py
-"""Pipeline modules for different RAG patterns."""
+"""
+RAG pipeline modules for different pipeline patterns.
+"""
 from .builder import RAGPipelineBuilder
 from .iterative import IterativeRAGPipeline
 
-__all__ = ["RAGPipelineBuilder", "IterativeRAGPipeline"]
+__all__ = [
+    "RAGPipelineBuilder",
+    "IterativeRAGPipeline"
+]

@@ -6,7 +6,7 @@ Factory for creating different chunking strategies.
 from typing import List, Protocol
 from abc import abstractmethod
 from core.types import Document
-from core.experiment_config import ChunkerConfig
+from core.config import ChunkerConfig
 
 class ChunkingStrategy(Protocol):
     """Protocol for chunking strategies"""

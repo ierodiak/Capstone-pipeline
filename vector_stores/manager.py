@@ -21,16 +21,16 @@ class VectorStoreManager:
     def _initialize_embeddings(self):
         """Initialize embedding model"""
         self.embeddings = OpenAIEmbeddings(
-            model=self.config.retriever.model
+            model=self.config.embedding.model
         )
-        print(f"Initialized embeddings with model: {self.config.retriever.model}")
+        print(f"Initialized embeddings with model: {self.config.embedding.model}")
         
     def create_vector_store(self, chunks: List[Document], persist: bool = True) -> Any:
         """Create vector store from chunks"""
-        display(Markdown(f"### Creating {self.config.vector_store_type.upper()} Vector Store"))
+        display(Markdown(f"### Creating {self.config.storage.type.upper()} Vector Store"))
         print(f"Processing {len(chunks)} chunks...")
         
-        if self.config.vector_store_type == "faiss":
+        if self.config.storage.type == "faiss":
             self.vector_store = FAISS.from_documents(
                 documents=chunks,
                 embedding=self.embeddings
@@ -39,7 +39,7 @@ class VectorStoreManager:
             if persist:
                 self.save_vector_store()
                 
-        elif self.config.vector_store_type == "chroma":
+        elif self.config.storage.type == "chroma":
             persist_dir = "./data/chroma_db" if persist else None
             
             self.vector_store = Chroma.from_documents(
@@ -50,21 +50,21 @@ class VectorStoreManager:
             )
             
         else:
-            raise ValueError(f"Unknown vector store type: {self.config.vector_store_type}")
+            raise ValueError(f"Unknown vector store type: {self.config.storage.type}")
         
         print(f"Vector store created successfully")
         return self.vector_store
     
     def save_vector_store(self):
         """Save vector store to disk"""
-        if self.config.vector_store_type == "faiss" and self.vector_store:
+        if self.config.storage.type == "faiss" and self.vector_store:
             save_path = "./data/faiss_index"
             self.vector_store.save_local(save_path)
             print(f"FAISS index saved to: {save_path}")
             
     def load_vector_store(self) -> Any:
         """Load vector store from disk"""
-        if self.config.vector_store_type == "faiss":
+        if self.config.storage.type == "faiss":
             load_path = "./data/faiss_index"
             if Path(load_path).exists():
                 self.vector_store = FAISS.load_local(
@@ -76,7 +76,7 @@ class VectorStoreManager:
             else:
                 print(f"No saved index found at: {load_path}")
                 
-        elif self.config.vector_store_type == "chroma":
+        elif self.config.storage.type == "chroma":
             persist_dir = "./data/chroma_db"
             if Path(persist_dir).exists():
                 self.vector_store = Chroma(

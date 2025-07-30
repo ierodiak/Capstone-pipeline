@@ -1,5 +1,12 @@
+# =====================================
 # system/__init__.py
-"""System module containing the main RAG system orchestrator."""
+"""
+Main RAG system orchestrator module.
+"""
 from .rag_system import ModularRAGSystem
+from .experiment_runner import ExperimentRunner
 
-__all__ = ["ModularRAGSystem"]
+__all__ = [
+    "ModularRAGSystem",
+    "ExperimentRunner"
+]

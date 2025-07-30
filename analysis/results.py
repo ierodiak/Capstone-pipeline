@@ -4,214 +4,121 @@ Results analysis and visualization module for RAG pipeline evaluation.
 from pathlib import Path
 from datetime import datetime
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.patches import Patch
 from IPython.display import display, Markdown
 
-from evaluation.orchestrator import EvaluationOrchestrator
-
-
 class ResultsAnalyzer:
     """Analyze and visualize RAG system results"""
     
-    def __init__(self, eval_orchestrator: EvaluationOrchestrator):
-        self.eval_orchestrator = eval_orchestrator
+    def __init__(self, results_df: pd.DataFrame):
+        self.df = results_df
         
+    def get_best_configuration(self, metric: str = 'aggregate_score') -> dict:
+        """Get the best performing configuration."""
+        config_scores = self.df.groupby('config_description')[metric].agg(['mean', 'std', 'count'])
+        best_config = config_scores['mean'].idxmax()
+        best_stats = config_scores.loc[best_config]
+        
+        # Get configuration details
+        best_row = self.df[self.df['config_description'] == best_config].iloc[0]
+        
+        return {
+            'configuration': best_config,
+            'mean_score': best_stats['mean'],
+            'std': best_stats['std'],
+            'count': best_stats['count'],
+            'details': {
+                'chunker_method': best_row.get('chunker_method', 'N/A'),
+                'chunk_size': best_row.get('chunk_size', 'N/A'),
+                'retriever_strategy': best_row.get('retriever_strategy', 'N/A'),
+                'top_k': best_row.get('retriever_top_k', 'N/A'),
+                'generator_model': best_row.get('generator_model', 'N/A')
+            }
+        }
+    
+    def compare_configurations(self) -> pd.DataFrame:
+        """Compare all configurations."""
+        metrics = ['aggregate_score', 'ragas_faithfulness', 'ragas_answer_relevancy', 
+                  'cofe_pipeline_score', 'omni_weighted_score', 'response_time']
+        
+        # Filter available metrics
+        available_metrics = [m for m in metrics if m in self.df.columns]
+        
+        return self.df.groupby('config_description')[available_metrics].agg(['mean', 'std', 'count']).round(3)
+    
+    def analyze_by_component(self) -> dict:
+        """Analyze impact of each component."""
+        components = ['chunker_method', 'chunk_size', 'retriever_strategy', 
+                     'retriever_top_k', 'generator_model']
+        
+        analyses = {}
+        for component in components:
+            if component in self.df.columns:
+                analyses[component] = self.df.groupby(component)['aggregate_score'].agg(['mean', 'std', 'count']).round(3)
+                
+        return analyses
+    
     def create_performance_dashboard(self):
-        """Create a comprehensive performance dashboard"""
-        df = self.eval_orchestrator.get_results_summary()
+        """Create a performance comparison dashboard."""
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
         
-        if df.empty:
-            print("No results to analyze")
-            return
+        # 1. Configuration comparison
+        ax1 = axes[0, 0]
+        config_scores = self.df.groupby('config_description')['aggregate_score'].mean().sort_values(ascending=False).head(10)
+        config_scores.plot(kind='barh', ax=ax1)
+        ax1.set_title('Top 10 Configurations by Score')
+        ax1.set_xlabel('Aggregate Score')
         
-        # Create figure with subplots
-        fig = plt.figure(figsize=(16, 10))
+        # 2. Framework scores comparison
+        ax2 = axes[0, 1]
+        framework_cols = {
+            'RAGAS': ['ragas_faithfulness', 'ragas_answer_relevancy'],
+            'CoFE-RAG': ['cofe_pipeline_score'],
+            'OmniEval': ['omni_weighted_score']
+        }
         
-        # 1. Response Time Distribution
-        ax1 = plt.subplot(2, 3, 1)
-        df['response_time'].hist(bins=10, ax=ax1, edgecolor='black')
-        ax1.set_title('Response Time Distribution')
-        ax1.set_xlabel('Time (seconds)')
-        ax1.set_ylabel('Frequency')
+        framework_means = {}
+        for name, cols in framework_cols.items():
+            available = [c for c in cols if c in self.df.columns]
+            if available:
+                framework_means[name] = self.df[available].mean().mean()
         
-        # 2. Average Metrics by Framework
-        ax2 = plt.subplot(2, 3, 2)
-        metric_cols = [col for col in df.columns if col.startswith(('ragas_', 'custom_'))]
-        
-        if metric_cols:
-            avg_metrics = df[metric_cols].apply(pd.to_numeric, errors='coerce').mean()
-            
-            # Separate by framework
-            ragas_metrics = {k.replace('ragas_', ''): v for k, v in avg_metrics.items() if k.startswith('ragas_')}
-            custom_metrics = {k.replace('custom_', ''): v for k, v in avg_metrics.items() if k.startswith('custom_')}
-            
-            # Plot grouped bar chart
-            x = list(range(len(ragas_metrics) + len(custom_metrics)))
-            labels = list(ragas_metrics.keys()) + list(custom_metrics.keys())
-            values = list(ragas_metrics.values()) + list(custom_metrics.values())
-            colors = ['skyblue'] * len(ragas_metrics) + ['lightcoral'] * len(custom_metrics)
-            
-            bars = ax2.bar(x, values, color=colors, edgecolor='black')
-            ax2.set_xticks(x)
-            ax2.set_xticklabels(labels, rotation=45, ha='right')
-            ax2.set_title('Average Metrics by Framework')
+        if framework_means:
+            pd.Series(framework_means).plot(kind='bar', ax=ax2)
+            ax2.set_title('Average Scores by Framework')
             ax2.set_ylabel('Score')
-            ax2.set_ylim(0, 1.1)
-            
-            # Add legend
-            legend_elements = [
-                Patch(facecolor='skyblue', label='RAGAS'),
-                Patch(facecolor='lightcoral', label='Custom')
-            ]
-            ax2.legend(handles=legend_elements)
+            ax2.set_ylim(0, 1)
         
-        # 3. Metrics Over Time
-        ax3 = plt.subplot(2, 3, 3)
-        if 'timestamp' in df.columns and len(df) > 1:
-            df['timestamp'] = pd.to_datetime(df['timestamp'])
-            df = df.sort_values('timestamp')
-            
-            # Plot key metrics over time
-            for col in ['ragas_faithfulness', 'custom_context_coverage']:
-                if col in df.columns:
-                    numeric_col = pd.to_numeric(df[col], errors='coerce')
-                    ax3.plot(range(len(df)), numeric_col, marker='o', label=col.replace('_', ' ').title())
-            
-            ax3.set_xlabel('Query Number')
-            ax3.set_ylabel('Score')
-            ax3.set_title('Metrics Over Time')
-            ax3.legend()
-            ax3.grid(True, alpha=0.3)
+        # 3. Response time vs quality
+        ax3 = axes[1, 0]
+        ax3.scatter(self.df['response_time'], self.df['aggregate_score'], alpha=0.5)
+        ax3.set_xlabel('Response Time (s)')
+        ax3.set_ylabel('Aggregate Score')
+        ax3.set_title('Response Time vs Quality Trade-off')
         
-        # 4. Correlation Heatmap
-        ax4 = plt.subplot(2, 3, 4)
-        numeric_df = df[metric_cols].apply(pd.to_numeric, errors='coerce')
-        
-        if len(numeric_df.columns) > 1:
-            corr_matrix = numeric_df.corr()
-            
-            im = ax4.imshow(corr_matrix, cmap='coolwarm', aspect='auto', vmin=-1, vmax=1)
-            ax4.set_xticks(range(len(corr_matrix.columns)))
-            ax4.set_yticks(range(len(corr_matrix.columns)))
-            ax4.set_xticklabels(corr_matrix.columns, rotation=45, ha='right')
-            ax4.set_yticklabels(corr_matrix.columns)
-            ax4.set_title('Metric Correlations')
-            
-            # Add colorbar
-            plt.colorbar(im, ax=ax4)
-            
-            # Add correlation values
-            for i in range(len(corr_matrix.columns)):
-                for j in range(len(corr_matrix.columns)):
-                    text = ax4.text(j, i, f'{corr_matrix.iloc[i, j]:.2f}',
-                                   ha="center", va="center", color="black", fontsize=8)
-        
-        # 5. Performance Summary Table
-        ax5 = plt.subplot(2, 3, 5)
-        ax5.axis('tight')
-        ax5.axis('off')
-        
-        # Create summary statistics
-        summary_data = []
-        summary_data.append(['Total Queries', len(df)])
-        summary_data.append(['Avg Response Time', f'{df["response_time"].mean():.2f}s'])
-        
-        for col in metric_cols[:5]:  # Show top 5 metrics
-            if col in numeric_df.columns:
-                mean_val = numeric_df[col].mean()
-                if not pd.isna(mean_val):
-                    summary_data.append([col.replace('_', ' ').title(), f'{mean_val:.3f}'])
-        
-        table = ax5.table(cellText=summary_data, cellLoc='left', loc='center')
-        table.auto_set_font_size(False)
-        table.set_fontsize(10)
-        ax5.set_title('Performance Summary', pad=20)
+        # 4. Component impact
+        ax4 = axes[1, 1]
+        component_impact = self.analyze_by_component()
+        if component_impact:
+            first_component = list(component_impact.keys())[0]
+            component_impact[first_component]['mean'].plot(kind='bar', ax=ax4)
+            ax4.set_title(f'Impact of {first_component}')
+            ax4.set_ylabel('Mean Score')
         
         plt.tight_layout()
         plt.show()
     
-    def export_results(self, output_path: str = "./results/rag_evaluation_results.csv"):
-        """Export results to CSV"""
-        df = self.eval_orchestrator.get_results_summary()
-        
-        if not df.empty:
-            # Ensure output directory exists
-            Path(output_path).parent.mkdir(parents=True, exist_ok=True)
+    def export_results(self, output_path: str):
+        """Export results to Excel with analysis."""
+        with pd.ExcelWriter(output_path, engine='openpyxl') as writer:
+            # Raw data
+            self.df.to_excel(writer, sheet_name='Raw Results', index=False)
             
-            # Save to CSV
-            df.to_csv(output_path, index=False)
-            print(f"Results exported to: {output_path}")
+            # Configuration comparison
+            self.compare_configurations().to_excel(writer, sheet_name='Config Comparison')
             
-            # Also save as Excel with formatting
-            excel_path = output_path.replace('.csv', '.xlsx')
-            with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
-                df.to_excel(writer, sheet_name='Results', index=False)
-                
-                # Add summary sheet
-                summary_df = df.describe()
-                summary_df.to_excel(writer, sheet_name='Summary')
-            
-            print(f"Excel report saved to: {excel_path}")
-        else:
-            print("No results to export")
-    
-    def generate_report(self):
-        """Generate a comprehensive evaluation report"""
-        df = self.eval_orchestrator.get_results_summary()
-        
-        if df.empty:
-            print("No results to report")
-            return
-        
-        display(Markdown("# RAG System Evaluation Report"))
-        display(Markdown(f"**Generated on**: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}"))
-        
-        # Executive Summary
-        display(Markdown("## Executive Summary"))
-        
-        total_queries = len(df)
-        avg_response_time = df['response_time'].mean()
-        
-        display(Markdown(f"""
-- **Total Queries Evaluated**: {total_queries}
-- **Average Response Time**: {avg_response_time:.2f} seconds
-- **Evaluation Frameworks Used**: {', '.join(self.eval_orchestrator.evaluators.keys())}
-        """))
-        
-        # Performance Metrics
-        display(Markdown("## Performance Metrics"))
-        
-        metric_cols = [col for col in df.columns if col.startswith(('ragas_', 'custom_'))]
-        if metric_cols:
-            metrics_df = df[metric_cols].apply(pd.to_numeric, errors='coerce').describe()
-            display(metrics_df)
-        
-        # Recommendations
-        display(Markdown("## Recommendations"))
-        
-        recommendations = []
-        
-        # Response time analysis
-        if avg_response_time > 3:
-            recommendations.append("- Consider optimizing retrieval or using a faster model to reduce response time")
-        
-        # Metric-specific recommendations
-        for col in metric_cols:
-            if col in df.columns:
-                numeric_col = pd.to_numeric(df[col], errors='coerce')
-                mean_val = numeric_col.mean()
-                
-                if not pd.isna(mean_val):
-                    if 'faithfulness' in col and mean_val < 0.8:
-                        recommendations.append("- Improve context quality or prompt engineering to increase faithfulness")
-                    elif 'relevancy' in col and mean_val < 0.7:
-                        recommendations.append("- Enhance retrieval strategy to improve answer relevancy")
-                    elif 'coverage' in col and mean_val < 0.6:
-                        recommendations.append("- Consider increasing context size or improving chunking strategy")
-        
-        if recommendations:
-            for rec in recommendations:
-                display(Markdown(rec))
-        else:
-            display(Markdown("- System is performing well across all metrics"))
+            # Component analysis
+            for component, analysis in self.analyze_by_component().items():
+                analysis.to_excel(writer, sheet_name=f'{component}_Analysis')
