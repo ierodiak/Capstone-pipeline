@@ -41,4 +41,4 @@ jupyter>=1.0.0
 openpyxl>=3.1.0
 
 # Notebook support
-nest-asyncio>=1.5.6
+nest-asyncio>=1.5.6nltk @ file:///private/var/folders/k1/30mswbxs7r1g6zwn8y4fyt500000gp/T/abs_66jwomcxtp/croot/nltk_1724427705781/work
