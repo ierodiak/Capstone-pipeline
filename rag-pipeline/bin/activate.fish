@@ -29,7 +29,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV '/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repo/RAG Pipeline/rag-pipeline'
+set -gx VIRTUAL_ENV '/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repos/RAG Pipeline/rag-pipeline'
 
 set -gx _OLD_VIRTUAL_PATH $PATH
 set -gx PATH "$VIRTUAL_ENV/"bin $PATH

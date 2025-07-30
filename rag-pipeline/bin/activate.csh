@@ -8,7 +8,7 @@ alias deactivate 'test $?_OLD_VIRTUAL_PATH != 0 && setenv PATH "$_OLD_VIRTUAL_PA
 # Unset irrelevant variables.
 deactivate nondestructive
 
-setenv VIRTUAL_ENV '/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repo/RAG Pipeline/rag-pipeline'
+setenv VIRTUAL_ENV '/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repos/RAG Pipeline/rag-pipeline'
 
 set _OLD_VIRTUAL_PATH="$PATH"
 setenv PATH "$VIRTUAL_ENV/"bin":$PATH"

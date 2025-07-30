@@ -1,5 +1,5 @@
 #!/bin/sh
-'''exec' "/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repos/RAG Pipeline/rag-pipeline/bin/python" "$0" "$@"
+'''exec' "/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repos/RAG Pipeline/rag-pipeline/bin/python3.9" "$0" "$@"
 ' '''
 # -*- coding: utf-8 -*-
 import re

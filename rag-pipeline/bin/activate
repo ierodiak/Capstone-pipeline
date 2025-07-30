@@ -37,7 +37,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV='/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repo/RAG Pipeline/rag-pipeline'
+VIRTUAL_ENV='/Users/ihebbz/Documents/LSE/Courses/Capstone /Group Repos/RAG Pipeline/rag-pipeline'
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

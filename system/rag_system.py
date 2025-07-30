@@ -18,10 +18,7 @@ from factories.retriever import RetrieverFactory
 from factories.generator import GeneratorFactory
 from pipelines.builder import RAGPipelineBuilder
 from evaluation.ragas_evaluator import RAGASEvaluator, RAGAS_AVAILABLE
-from evaluation.custom_evaluator import CustomEvaluator
 from evaluation.orchestrator import EvaluationOrchestrator
-from evaluation.modular_evaluator import ModularEvaluator
-from metrics.metric_factory import MetricFactory
 from utils.logger import setup_logger
 
 logger = setup_logger(__name__)
